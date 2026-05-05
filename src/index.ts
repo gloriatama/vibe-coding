@@ -1,3 +1,4 @@
+// Main entry point for ElysiaJS server
 import { Elysia } from 'elysia';
 
 const app = new Elysia()
