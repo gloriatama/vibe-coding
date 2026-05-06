@@ -75,17 +75,14 @@ export const getCurrentUser = async (token: string) => {
 };
 
 export const logoutUser = async (token: string) => {
-  // Check if session exists
-  const session = await db.query.sessions.findFirst({
-    where: eq(sessions.token, token),
-  });
+  // Delete session and return deleted rows
+  const deletedSessions = await db.delete(sessions)
+    .where(eq(sessions.token, token))
+    .returning();
 
-  if (!session) {
+  if (deletedSessions.length === 0) {
     throw new Error('Unauthorized');
   }
-
-  // Delete session
-  await db.delete(sessions).where(eq(sessions.token, token));
 
   return { data: 'OK' };
 };
