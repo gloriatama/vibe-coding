@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { users } from '../db/schema';
+import { users, sessions } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 export const registerUser = async ({ name, email, password }: any) => {
@@ -26,4 +26,33 @@ export const registerUser = async ({ name, email, password }: any) => {
   });
 
   return { data: 'OK' };
+};
+
+export const loginUser = async ({ email, password }: any) => {
+  // Find user by email
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (!user) {
+    throw new Error('Email atau password salah');
+  }
+
+  // Verify password
+  const isPasswordValid = await Bun.password.verify(password, user.password);
+
+  if (!isPasswordValid) {
+    throw new Error('Email atau password salah');
+  }
+
+  // Generate token
+  const token = crypto.randomUUID();
+
+  // Create session
+  await db.insert(sessions).values({
+    token,
+    userId: user.id,
+  });
+
+  return { data: token };
 };
