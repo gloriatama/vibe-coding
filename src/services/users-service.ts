@@ -56,3 +56,20 @@ export const loginUser = async ({ email, password }: any) => {
 
   return { data: token };
 };
+
+export const getCurrentUser = async (token: string) => {
+  // Find session and join with user
+  const sessionWithUser = await db.query.sessions.findFirst({
+    where: eq(sessions.token, token),
+    with: {
+      user: true,
+    },
+  });
+
+  if (!sessionWithUser) {
+    throw new Error('Unauthorized');
+  }
+
+  const { password, ...userData } = sessionWithUser.user;
+  return { data: userData };
+};
