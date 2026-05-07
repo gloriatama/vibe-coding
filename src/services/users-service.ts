@@ -2,6 +2,10 @@ import { db } from '../db';
 import { users, sessions } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
+/**
+ * Mendaftarkan user baru ke dalam database.
+ * Melakukan pengecekan duplikasi email dan melakukan hashing password.
+ */
 export const registerUser = async ({ name, email, password }: any) => {
   // Check if email already exists
   const existingUser = await db.query.users.findFirst({
@@ -28,6 +32,10 @@ export const registerUser = async ({ name, email, password }: any) => {
   return { data: 'OK' };
 };
 
+/**
+ * Melakukan autentikasi user berdasarkan email dan password.
+ * Jika valid, akan membuat session baru dan mengembalikan token UUID.
+ */
 export const loginUser = async ({ email, password }: any) => {
   // Find user by email
   const user = await db.query.users.findFirst({
@@ -57,6 +65,10 @@ export const loginUser = async ({ email, password }: any) => {
   return { data: token };
 };
 
+/**
+ * Mengambil data profil user yang sedang login berdasarkan session token.
+ * Menggunakan query relational Drizzle untuk mengambil data user terkait.
+ */
 export const getCurrentUser = async (token: string) => {
   // Find session and join with user
   const sessionWithUser = await db.query.sessions.findFirst({
@@ -74,6 +86,10 @@ export const getCurrentUser = async (token: string) => {
   return { data: userData };
 };
 
+/**
+ * Menghapus data session berdasarkan token untuk proses logout.
+ * Melempar error Unauthorized jika token tidak ditemukan.
+ */
 export const logoutUser = async (token: string) => {
   // Delete session and return deleted rows
   const deletedSessions = await db.delete(sessions)

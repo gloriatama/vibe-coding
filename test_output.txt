@@ -1,0 +1,17 @@
+bun test v1.3.13 (bf2e2cec)
+
+tests\users.test.ts:
+🦊 Elysia is running at localhost:3000
+(pass) User API Tests > POST /api/users (Registration) > should register a new user successfully [625.00ms]
+(pass) User API Tests > POST /api/users (Registration) > should fail if email already exists [172.00ms]
+(pass) User API Tests > POST /api/users (Registration) > should fail if name exceeds 255 characters [16.00ms]
+(pass) User API Tests > POST /api/users/login > should login successfully and return a token [281.00ms]
+(pass) User API Tests > POST /api/users/login > should fail with wrong password [281.00ms]
+(pass) User API Tests > Auth Required Endpoints > should get current user profile [282.00ms]
+(pass) User API Tests > Auth Required Endpoints > should logout successfully [250.00ms]
+(pass) User API Tests > Auth Required Endpoints > should return 401 for invalid token [406.00ms]
+
+ 8 pass
+ 0 fail
+ 17 expect() calls
+Ran 8 tests across 1 file. [4.16s]
