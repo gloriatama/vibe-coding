@@ -6,12 +6,8 @@ export const usersRoute = new Elysia()
     try {
       return await registerUser(body);
     } catch (error: any) {
-      if (error.message === 'Email sudah terdaftar') {
-        set.status = 400;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
+      set.status = error.message && error.message.includes('Email sudah terdaftar') ? 400 : 500;
+      return { error: error.message && error.message.includes('Email sudah terdaftar') ? error.message : 'Internal Server Error' };
     }
   }, {
     body: t.Object({
@@ -24,12 +20,8 @@ export const usersRoute = new Elysia()
     try {
       return await loginUser(body);
     } catch (error: any) {
-      if (error.message === 'Email atau password salah') {
-        set.status = 401;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
+      set.status = error.message && error.message.includes('Email atau password salah') ? 401 : 500;
+      return { error: error.message && error.message.includes('Email atau password salah') ? error.message : 'Internal Server Error' };
     }
   }, {
     body: t.Object({
@@ -48,12 +40,8 @@ export const usersRoute = new Elysia()
       const token = authHeader.split(' ')[1];
       return await getCurrentUser(token);
     } catch (error: any) {
-      if (error.message === 'Unauthorized') {
-        set.status = 401;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
+      set.status = error.message && error.message.includes('Unauthorized') ? 401 : 500;
+      return { error: error.message && (error.message.includes('Unauthorized') || error.message.includes('Email sudah terdaftar') || error.message.includes('Email atau password salah')) ? error.message : 'Internal Server Error' };
     }
   })
   .delete('/logout', async ({ headers, set }) => {
@@ -67,12 +55,8 @@ export const usersRoute = new Elysia()
       const token = authHeader.split(' ')[1];
       return await logoutUser(token);
     } catch (error: any) {
-      if (error.message === 'Unauthorized') {
-        set.status = 401;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
+      set.status = error.message && error.message.includes('Unauthorized') ? 401 : 500;
+      return { error: error.message && (error.message.includes('Unauthorized') || error.message.includes('Email sudah terdaftar') || error.message.includes('Email atau password salah')) ? error.message : 'Internal Server Error' };
     }
   });
 
