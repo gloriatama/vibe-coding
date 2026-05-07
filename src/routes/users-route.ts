@@ -14,7 +14,12 @@ export const usersRoute = new Elysia()
       name: t.String({ maxLength: 255 }),
       email: t.String({ maxLength: 255 }),
       password: t.String(),
-    })
+    }),
+    detail: {
+      tags: ['User'],
+      summary: 'Registrasi user baru',
+      description: 'Mendaftarkan user baru ke dalam database dengan password terenkripsi.'
+    }
   })
   .post('/login', async ({ body, set }) => {
     try {
@@ -27,7 +32,12 @@ export const usersRoute = new Elysia()
     body: t.Object({
       email: t.String(),
       password: t.String(),
-    })
+    }),
+    detail: {
+      tags: ['User'],
+      summary: 'Login user',
+      description: 'Melakukan autentikasi user dan mengembalikan session token.'
+    }
   })
   .get('/current', async ({ headers, set }) => {
     try {
@@ -43,6 +53,13 @@ export const usersRoute = new Elysia()
       set.status = error.message && error.message.includes('Unauthorized') ? 401 : 500;
       return { error: error.message && (error.message.includes('Unauthorized') || error.message.includes('Email sudah terdaftar') || error.message.includes('Email atau password salah')) ? error.message : 'Internal Server Error' };
     }
+  }, {
+    detail: {
+      tags: ['User'],
+      summary: 'Ambil data profil user',
+      description: 'Mendapatkan data user yang sedang aktif berdasarkan token.',
+      security: [{ BearerAuth: [] }]
+    }
   })
   .delete('/logout', async ({ headers, set }) => {
     try {
@@ -57,6 +74,13 @@ export const usersRoute = new Elysia()
     } catch (error: any) {
       set.status = error.message && error.message.includes('Unauthorized') ? 401 : 500;
       return { error: error.message && (error.message.includes('Unauthorized') || error.message.includes('Email sudah terdaftar') || error.message.includes('Email atau password salah')) ? error.message : 'Internal Server Error' };
+    }
+  }, {
+    detail: {
+      tags: ['User'],
+      summary: 'Logout user',
+      description: 'Menghapus session token yang sedang digunakan.',
+      security: [{ BearerAuth: [] }]
     }
   });
 
