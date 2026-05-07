@@ -1,43 +1,45 @@
-# Bug Report & Perbaikan: Error 500 saat Registrasi dengan Nama Terlalu Panjang
+# Perencanaan Pembuatan Unit Test API
 
-Dokumen ini berisi laporan bug (Bug Report) beserta panduan langkah demi langkah untuk memperbaikinya. Panduan ini ditujukan bagi programmer junior atau model AI untuk mengeksekusi perbaikan sesuai dengan standar proyek.
+Dokumen ini berisi daftar perencanaan skenario untuk pembuatan unit test seluruh API yang tersedia pada proyek ini. Implementasi detail pengujian akan dilakukan oleh programmer junior atau model AI.
 
-## 1. Deskripsi Bug
-
-- **Masalah:** Saat melakukan registrasi user baru (POST `/api/users`) dengan jumlah karakter pada field `name` yang sangat panjang (misal 300 karakter), server mengalami *crash* dan mengembalikan respons HTTP `500 Internal Server Error`.
-- **Akar Penyebab (Root Cause):** Pada skema database (`src/db/schema.ts`), kolom `name` pada tabel `users` didefinisikan dengan batas panjang 255 karakter (`varchar('name', { length: 255 })`). Saat data yang melebihi batas ini dikirimkan, database PostgreSQL menolak *insert* tersebut dan melempar *exception*. Karena tidak ada validasi panjang string di level API, error ini lolos hingga ke database dan memicu respons 500.
-- **Harapan (Expected Behavior):** API seharusnya menangkal input yang tidak valid sebelum menyentuh database dan mengembalikan respons HTTP `400 Bad Request` beserta pesan error yang jelas (contoh: "Nama maksimal 255 karakter").
-
-## 2. Struktur File yang Terlibat
-
-- **`src/routes/users-route.ts`**: Tempat validasi input API (request body) harus ditambahkan.
+## 1. Spesifikasi Teknis Pengujian
+- **Framework:** Menggunakan bawaan dari ekosistem Bun yaitu `bun test`.
+- **Lokasi File:** Semua file pengujian harus diletakkan di dalam folder `tests/` di root proyek.
+- **Konsistensi Data:** **SANGAT PENTING!** Sebelum menjalankan setiap skenario (misalnya menggunakan hook `beforeEach`), data terkait di dalam database harus dihapus/dibersihkan terlebih dahulu agar hasil test selalu konsisten dan tidak saling mengganggu antar skenario.
 
 ---
 
-## 3. Tahapan Perbaikan (Langkah Demi Langkah)
+## 2. Daftar API dan Skenario Pengujian
 
-Berikut adalah urutan pengerjaan yang harus dilakukan:
+Berikut adalah daftar endpoint API yang harus diuji beserta skenario-skenario yang wajib di-cover:
 
-### Langkah 1: Tambahkan Validasi Panjang Karakter di Route Layer
-1. Buka file `src/routes/users-route.ts`.
-2. Cari bagian definisi skema validasi untuk endpoint registrasi (method `.post('', ...)`).
-3. Saat ini, validasi untuk `name` hanya menggunakan `t.String()`.
-4. Perbarui validasi tersebut dengan menambahkan batasan panjang (length constraint) bawaan ElysiaJS, yaitu:
-   ```typescript
-   name: t.String({ maxLength: 255 })
-   ```
-5. Lakukan hal yang sama untuk field `email` (jika belum) agar mencegah error serupa di masa mendatang:
-   ```typescript
-   email: t.String({ maxLength: 255 })
-   ```
+### A. Endpoint Registrasi (`POST /api/users`)
+1. **[Sukses]** Registrasi berhasil dengan payload (nama, email, password) yang valid.
+2. **[Gagal]** Registrasi menggunakan email yang sudah pernah terdaftar sebelumnya di database.
+3. **[Gagal]** Registrasi dengan payload yang tidak lengkap (misalnya field `email` atau `password` dihilangkan).
+4. **[Gagal]** Registrasi dengan panjang karakter `name` atau `email` melebihi batas maksimal (lebih dari 255 karakter).
 
-### Langkah 2: (Opsional) Penyesuaian Pesan Error
-ElysiaJS secara otomatis akan menangkap (catch) validasi tipe dari `t.Object` dan mengembalikan respons `400 Bad Request` jika data tidak memenuhi syarat. Anda tidak perlu mengubah logika di dalam *handler function* (`async ({ body, set }) => { ... }`) untuk menangani ini, karena Elysia menanganinya sebelum kode di *handler* dieksekusi.
+### B. Endpoint Login (`POST /api/users/login`)
+1. **[Sukses]** Login berhasil menggunakan email dan password yang benar (harus mengembalikan *session token*).
+2. **[Gagal]** Login menggunakan email yang tidak terdaftar di database.
+3. **[Gagal]** Login menggunakan email yang benar, namun dengan password yang salah.
+4. **[Gagal]** Login dengan payload yang tidak lengkap atau kosong.
 
-### Langkah 3: Pengujian (Testing) Perbaikan
-1. Pastikan server berjalan (`bun run dev`).
-2. Gunakan HTTP client (seperti curl, Postman, atau Bruno).
-3. Buat payload JSON dengan field `name` berisi lebih dari 255 karakter.
-4. Tembak endpoint `POST /api/users`.
-5. Pastikan respons yang didapatkan sekarang adalah **HTTP 400 Bad Request** (bukan 500) dengan pesan dari Elysia yang menyatakan bahwa validasi `name` gagal karena melebihi batas karakter.
-6. Lakukan pengujian tambahan dengan memasukkan nama yang normal (misal 10 karakter) untuk memastikan fungsionalitas registrasi normal tetap berjalan dengan baik.
+### C. Endpoint Get Current User (`GET /api/users/current`)
+1. **[Sukses]** Mendapatkan profil user menggunakan header `Authorization: Bearer <token>` yang valid.
+2. **[Gagal]** Mencoba mengakses endpoint tanpa mengirimkan header `Authorization` sama sekali.
+3. **[Gagal]** Mengakses endpoint dengan token yang tidak valid, salah, atau acak (tidak ada di database).
+4. **[Gagal]** Mengirimkan header `Authorization` namun dengan format yang salah (misalnya tanpa awalan `Bearer `).
+
+### D. Endpoint Logout (`DELETE /api/users/logout`)
+1. **[Sukses]** Logout berhasil menggunakan token yang valid (harus menghapus data sesi dari tabel `sessions` di database).
+2. **[Gagal]** Mencoba logout tanpa mengirimkan header `Authorization`.
+3. **[Gagal]** Mencoba logout menggunakan token yang tidak valid atau sudah tidak ada di database.
+4. **[Integrasi]** Lakukan operasi `GET /api/users/current` menggunakan token yang baru saja di-logout; pastikan operasi ini gagal (Unauthorized) karena token seharusnya sudah dihapus.
+
+---
+
+## 3. Instruksi Tambahan untuk Implementator
+- Tidak ada spesifikasi teknis kode yang mendetail, silakan kembangkan *assertion* (seperti pengecekan HTTP Status Code, validasi struktur JSON respons, dll) sesuai dengan *best practice* pengujian.
+- Pastikan koneksi dan inisialisasi database di dalam folder `tests/` sudah dikonfigurasi dengan benar agar tidak mengenai data produksi jika memungkinkan.
+- Fokus pada *coverage* dari skenario di atas agar mencakup berbagai *edge cases*.
